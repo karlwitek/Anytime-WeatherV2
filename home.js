@@ -11,7 +11,7 @@ async function fetchCityCurrentWeather(city=null) {
 
   isFahrenheit = $w('#tempUnitBtn').value === 'Radio button1' ? true : false;// 
 
-  function getCityName() {// CHANGE , PUT OUTSIDE, ACCEPT PARAM
+  function getCityName() {
     if (city) {
       return city;
     }
@@ -85,18 +85,56 @@ function displayProperUnits() {
 	$w('#day5Description').text = forecastData.forecast.forecastday[4].day.condition.text;  
 }
 
+async function updateFavoriteCity() {// need try catch 2
+  let cityObj = await queryFavoriteCity();
+  if (cityObj.items.length > 0) {
+    // update here
+    let updatedObj = await wixData.update('cities', { _id: cityObj.items[0]._id,  city: forecastData.location.name + ", " + forecastData.location.region });
+    console.log(updatedObj);
+  } else {
+    // insert here
+    let insertedResObj = await wixData.insert('cities', { city: forecastData.location.name + ", " + forecastData.location.region });
+    console.log(insertedResObj);
+  }
+}
 
+  async function queryFavoriteCity() {// try catch
+  let cityObj = await wixData.query('cities').find();
+  return cityObj;
+}
+
+async function displayFavCityOnPageLoad() { 
+
+  $w('#spinner').show();// not yet
+
+  let cityObj = await queryFavoriteCity();
+  
+  if (cityObj.items.length > 0) {
+    await fetchCityCurrentWeather(cityObj.items[0].city);
+
+    const fadeOptions = {
+      duration: 1200,
+      delay: 300,
+    };
+
+    // spinner hides along with the overlay
+    $w('#overlay').hide("fade", fadeOptions);
+    $w('#favBtn').enable();
+  } else {
+    return;// return resolved Promise?
+  }
+}
 
 $w.onReady(async function () {
   $w('#spinner').hide();
   $w('#favBtn').disable();
 
-  await displayFavCityOnPageLoad();
+  // await displayFavCityOnPageLoad();
 
 	$w('#inputTextField').onKeyPress(async(event) => {
 		
 		if (event.key === 'Enter') {
-      await fetchCityCurrentWeather(null);
+      await fetchCityCurrentWeather();
 		}
  	});
 
@@ -131,46 +169,6 @@ $w.onReady(async function () {
  
 	});
 
-  async function queryFavoriteCity() {// try catch
-    let cityObj = await wixData.query('cities').find();
-    return cityObj;
-  }
-
-  async function displayFavCityOnPageLoad() {// need else? 
-
-    $w('#spinner').show();// not yet
-
-    let cityObj = await queryFavoriteCity();
-    
-    if (cityObj.items.length > 0) {
-      await fetchCityCurrentWeather(cityObj.items[0].city);
-
-      const fadeOptions = {
-        duration: 1200,
-        delay: 300,
-      };
-
-      // spinner hides along with the overlay
-      $w('#overlay').hide("fade", fadeOptions);
-      $w('#favBtn').enable();
-    }
-  }
-
-
-
-
-  async function updateFavoriteCity() {// need try catch 2
-    let cityObj = await queryFavoriteCity();
-    if (cityObj.items.length > 0) {
-      // update here
-      let updatedObj = await wixData.update('cities', { _id: cityObj.items[0]._id,  city: forecastData.location.name + ", " + forecastData.location.region });
-      console.log(updatedObj);
-    } else {
-      // insert here
-      let insertedResObj = await wixData.insert('cities', { city: forecastData.location.name + ", " + forecastData.location.region });
-      console.log(insertedResObj);
-    }
-  }
 
   $w('#favBtn').onClick(updateFavoriteCity);
 
