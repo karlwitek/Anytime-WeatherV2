@@ -133,7 +133,7 @@ $w.onReady(async function () {
 
 	$w('#inputTextField').onKeyPress(async(event) => {
 		
-		if (event.key === 'Enter') {
+	  if (event.key === 'Enter') {
       await fetchCityCurrentWeather();
 		}
  	});
